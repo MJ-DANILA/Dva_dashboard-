@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DVA AI Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .dashboard {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .success-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .success-rate {
+            font-size: 48px;
+            font-weight: bold;
+            color: #10b981;
+            margin: 10px 0;
+        }
+        .admin-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .admin-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .admin-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .admin-item:last-child {
+            border-bottom: none;
+        }
+        .admin-name {
+            font-weight: 600;
+            color: #333;
+        }
+        .admin-stats {
+            color: #667eea;
+            font-weight: 500;
+        }
+        .loading {
+            text-align: center;
+            color: white;
+            padding: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>📊 DVA AI DASHBOARD</h1>
+            <div class="timestamp" id="timestamp">Loading...</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">💰 TOTAL VOLUME</div>
+                <div class="stat-value" id="totalVolume">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">🇪🇹 ETB VOLUME</div>
+                <div class="stat-value" id="etbVolume">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">💵 USD VOLUME</div>
+                <div class="stat-value" id="usdVolume">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">📊 TOTAL DEALS</div>
+                <div class="stat-value" id="totalDeals">-</div>
+            </div>
+        </div>
+
+        <div class="success-card">
+            <div class="stat-label">⭐ SUCCESS RATE</div>
+            <div class="success-rate" id="successRate">-</div>
+            <div id="activeCurrency" style="color: #666;"></div>
+        </div>
+
+        <div class="admin-section">
+            <div class="admin-title">👑 ADMIN LEADERBOARD</div>
+            <div id="adminList"></div>
+        </div>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        let Telegram = window.Telegram.WebApp;
+        Telegram.ready();
+        Telegram.expand();
+
+        // Demo data (replace with your API later)
+        const demoData = {
+            totalVolume: 1170.00,
+            etbVolume: 1100,
+            usdVolume: 70.00,
+            totalDeals: 16,
+            successRate: 80,
+            activeCurrency: "Most Active: ETB",
+            admins: [
+                {name: '@Agegenewu0102', deals: 63, usd: 656.50, etb: 93000},
+                {name: '@Mr_JOKER_UP', deals: 40, usd: 471.30, etb: 4613},
+                {name: '@Joker_Bv', deals: 34, usd: 83.04, etb: 4250},
+                {name: '@Amanu279', deals: 14, usd: 57.20, etb: 11750},
+                {name: '@Blackaauu', deals: 15, usd: 124.00, etb: 0},
+                {name: '@Kefafi3', deals: 5, usd: 28.80, etb: 0},
+                {name: '@It_is_me_Viva', deals: 14, usd: 9.90, etb: 4550},
+                {name: '@Liyu_7557', deals: 6, usd: 31.16, etb: 1860}
+            ]
+        };
+
+        function updateDashboard(data) {
+            document.getElementById('totalVolume').textContent = '$' + data.totalVolume.toFixed(2);
+            document.getElementById('etbVolume').textContent = data.etbVolume + ' ETB';
+            document.getElementById('usdVolume').textContent = '$' + data.usdVolume.toFixed(2);
+            document.getElementById('totalDeals').textContent = data.totalDeals;
+            document.getElementById('successRate').textContent = data.successRate + '%';
+            document.getElementById('activeCurrency').textContent = data.activeCurrency;
+            document.getElementById('timestamp').textContent = 'Live: ' + new Date().toLocaleString();
+
+            let adminHtml = '';
+            data.admins.sort((a, b) => b.deals - a.deals).forEach(admin => {
+                adminHtml += `
+                    <div class="admin-item">
+                        <span class="admin-name">${admin.name}</span>
+                        <span class="admin-stats">${admin.deals} deals, $${admin.usd} USD, ${admin.etb} ETB</span>
+                    </div>
+                `;
+            });
+            document.getElementById('adminList').innerHTML = adminHtml;
+        }
+
+        // Load dashboard
+        updateDashboard(demoData);
+        
+        // Refresh every 30 seconds
+        setInterval(() => {
+            updateDashboard(demoData);
+        }, 30000);
+    </script>
+</body>
+</html>
